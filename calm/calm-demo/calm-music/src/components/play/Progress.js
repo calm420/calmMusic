@@ -27,16 +27,20 @@ export default class Progress extends React.Component {
     constructor(props) {
         super(props);
     }
-
+    componentDidUpdate(){
+        if(!this.progressBarWidth){
+            this.progressBarWidth = ReactDOM.findDOMNode(this.refs.progressBar).offsetWidth;
+        }
+    }
     componentDidMount() {
         /**
          * 获取dom和进度条总长度
          */
-        let ProgressBarDOM = ReactDOM.findDOMNode(this.refs.progressBar)
-        let ProgressDOM = ReactDOM.findDOMNode(this.refs.progress)
+        let progressBarDOM = ReactDOM.findDOMNode(this.refs.progressBar)
+        let progressDOM = ReactDOM.findDOMNode(this.refs.progress)
         let progressBtnDOM = ReactDOM.findDOMNode(this.refs.progressBtn)
 
-        this.progressBarWidth = ProgressBarDOM.offsetWidth;
+        this.progressBarWidth = progressBarDOM.offsetWidth;
 
         /**
          * 拽功能利用移动端的touchstart、touchmove和touchend来实现
@@ -67,8 +71,8 @@ export default class Progress extends React.Component {
                 let touch = e.touches[0];
                 let diffX = touch.clientX - downX;
                 let btnLeft = buttonLeft + diffX;
-                if (btnLeft > progressBtnDOM.offsetWidth) {
-                    btnLeft = progressBtnDOM.offsetWidth;
+                if (btnLeft > progressBarDOM.offsetWidth) {
+                    btnLeft = progressBarDOM.offsetWidth;
                 } else if (btnLeft < 0) {
                     btnLeft = 0;
                 }
@@ -76,7 +80,7 @@ export default class Progress extends React.Component {
                 //设置按钮的left值
                 touch.target.style.left = btnLeft + "px";
                 //设置进度条的宽度
-                progressBtnDOM.style.width = btnLeft / this.progressBarWidth * 100 + "%";
+                progressDOM.style.width = btnLeft / this.progressBarWidth * 100 + "%";
 
                 if (onDrag) {
                     onDrag(btnLeft / this.progressBarWidth);

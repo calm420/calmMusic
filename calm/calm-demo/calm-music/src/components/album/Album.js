@@ -92,6 +92,9 @@ export default class Album extends React.Component {
             mContainerHeight: height
         })
     }
+    /**
+     * 获取歌曲Vkey的方法
+     */
     getSongUrl(song, mId) {
         /**
          * 根据传入的每一个音乐的ID,获取歌曲VKey的方法

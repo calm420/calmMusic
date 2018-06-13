@@ -4,16 +4,17 @@ import { Song } from "@/model/song";
 import Progress from "./Progress";
 
 import "./Player.styl";
-
+var calm;
 export default class Player extends React.Component {
     constructor(props) {
         super(props);
-
+        calm = this;
+        this.dragProgress = 0;
         this.currentSong = new Song(0, "", "", "", 0, "", "");
         this.currentIndex = 0;
         this.isFirstPlay = true;
-        //播放模式： list-列表 single-单曲 shuffle-随机
-        this.playModes = ["list", "single", "shuffle"];
+        //播放模式： menu-列表 loop2-单曲 shuffle-随机
+        this.playModes = ["menu", "loop2", "shuffle"];
         this.state = {
             currentTime: 0,
             playProgress: 0,
@@ -26,13 +27,18 @@ export default class Player extends React.Component {
         this.singerImgDOM = ReactDOM.findDOMNode(this.refs.singerImg);
         this.playerDOM = ReactDOM.findDOMNode(this.refs.player);
         this.playerBgDOM = ReactDOM.findDOMNode(this.refs.playerBg);
+        /**
+         * 监听开始播放的事件
+         */
         this.audioDOM.addEventListener("canplay", () => {
             this.audioDOM.play();
             this.setState({
                 playStatus: true
             })
         }, false)
-
+        /**
+         * 监听播放位置发生改变时的事件
+         */
         this.audioDOM.addEventListener("timeupdate", () => {
             if (this.state.playStatus === true) {
                 this.setState({
@@ -40,6 +46,46 @@ export default class Player extends React.Component {
                     currentTime: this.audioDOM.currentTime
                 })
             }
+        }, false)
+
+        /**
+         *  播放完后的处理，给audio注册ended事件
+         */
+        this.audioDOM.addEventListener("ended", () => {
+            console.log("end")
+            if (this.props.playSongs.length > 1) {
+                let currentIndex = this.currentIndex;
+                if (this.state.currentPlayMode === 0) {
+                    if (currentIndex = this.props.playSongs.length - 1) {
+                        currentIndex = 0
+                    } else {
+                        currentIndex += 1;
+                    }
+                } else if (this.state.currentPlayMode === 1) {
+                    this.audioDOM.play();
+                    return;
+                } else {
+                    let index = parseInt(Math.random() * this.props.playSongs.length, 10);
+                    currentIndex = index;
+                }
+                this.props.changeCurrentSong(calm.props.playSongs[currentIndex]);
+                // this.props.changeCurrentIndex(currentIndex);
+            } else {
+                if (this.state.currentPlayMode === 1) {
+                    this.audioDOM.play();
+                } else {
+                    this.audioDOM.pause();
+                    this.setState({
+                        playProgress: 0,
+                        currentTime: 0,
+                        playStatus: false
+                    })
+                }
+            }
+        }, false)
+
+        this.audioDOM.addEventListener("error", () => {
+            alert("加载歌曲出错")
         }, false)
 
     }
@@ -70,7 +116,11 @@ export default class Player extends React.Component {
      * 播放与暂停
      */
     playOrPause = () => {
-        if (this.audioDOM.playStatus === false) {
+        if (this.state.playStatus == false) {
+            if(this.first == undefined){
+                this.audioDOM.src = this.currentSong.url;
+                this.first = true;
+            }
             this.audioDOM.play();
             this.setState({
                 playStatus: true
@@ -81,6 +131,7 @@ export default class Player extends React.Component {
                 playStatus: false
             })
         }
+        console.log(this.state.playStatus)
     }
 
 
@@ -89,12 +140,15 @@ export default class Player extends React.Component {
      */
     previous = () => {
         if (this.props.playSongs.length > 0 && this.props.playSongs.length !== 1) {
-            let currentIndex = this.currentIndex;
+            let currentIndex = calm.currentIndex;
+            console.log("1",currentIndex);
             if (this.state.currentPlayMode === 0) { //列表播放
                 if (currentIndex === 0) {
-                    currentIndex = this.props.length - 1;
+                    console.log("===0",currentIndex)
+                    currentIndex = this.props.playSongs.length - 1;
+                    console.log("===0===",currentIndex)
                 } else {
-                    currentIndex = currentIndex - 1;
+                    currentIndex -= 1;
                 }
             } else if (this.state.currentPlayMode === 1) {//单曲循环
                 currentIndex = this.currentIndex;
@@ -102,8 +156,9 @@ export default class Player extends React.Component {
                 let index = parseInt(Math.random() * this.props.playSongs.length, 10);
                 currentIndex = index;
             }
+            console.log("2",currentIndex)
             this.props.changeCurrentSong(this.props.playSongs[currentIndex]);
-            this.props.changeCurrentIndex(currentIndex);
+            // this.props.changeCurrentIndex(currentIndex);
         }
     }
 
@@ -111,7 +166,8 @@ export default class Player extends React.Component {
      * 下一首
      */
     next = () => {
-        
+        // console.log("next")
+        // return
         if (this.props.playSongs.length > 0 && this.props.playSongs.length !== 1) {
             let currentIndex = this.currentIndex;
             if (this.state.currentPlayMode === 0) {
@@ -128,7 +184,11 @@ export default class Player extends React.Component {
             }
 
             this.props.changeCurrentSong(this.props.playSongs[currentIndex]);
-            this.props.changeCurrentIndex(currentIndex);
+            console.log(currentIndex);
+            /**
+             * 调用父组件修改当前歌曲位置
+             */
+            // this.props.changeCurrentIndex(currentIndex);
         }
 
     }
@@ -146,26 +206,65 @@ export default class Player extends React.Component {
     stopImgRotate = () => {
 
     }
+    /**
+     * 拖拽方法
+     */
+    handleDrag = (progress) => {
+        if (this.audioDOM.duration > 0) {
+            this.audioDOM.pause();
+            this.setState({
+                playStatus: false
+            })
+            this.dragProgress = progress;
+        }
+    }
+    /**
+     * 拖拽结束
+     */
+    handleDragEnd = () => {
+        if (this.audioDOM.duration > 0) {
+            let currentTime = this.audioDOM.duration * calm.dragProgress;
+
+            console.log("duration",this.audioDOM.duration)
+            console.log("calm.dragProgress",calm.dragProgress)
+            this.setState({
+                playProgress: this.dragProgress,
+                currentTime: currentTime
+            }, () => {
+                this.audioDOM.currentTime = currentTime;
+                this.audioDOM.play();
+                this.setState({
+                    playStatus: true
+                })
+                this.dragProgress = 0;
+            })
+        }
+
+    }
+
     render() {
+        
+        // this.currentIndex = this.props.currentIndex;
+        // console.log(this.props.currentIndex)
+        //从redux中获取当前播放歌曲
+        if (this.props.currentSong && this.props.currentSong.url) {
+            //当前歌曲发生变化
+            if (this.currentSong.id !== this.props.currentSong.id) {
+                this.currentSong = this.props.currentSong;
+                if (this.audioDOM) {
+                    this.audioDOM.src = this.currentSong.url;
+                    //加载资源，iOS需要调用此方法
+                    this.audioDOM.load();
+                }
+            }
+        }
         let song = this.currentSong;
 
         let playBg = song.img ? song.img : require("@/assets/imgs/play_bg.jpg");
 
         let playButtonClass = this.state.playStatus === true ? "icon-pause" : "icon-play2";
 
-        song.playStstus = this.state.playStatus;
-
-        //从redux中获取当前播放歌曲
-        if (this.props.currentSong && this.props.currentSong.url) {
-            //当前歌曲发生变化
-            if (this.currentSong.id !== this.props.currentSong.id) {
-                this.currentSong = this.props.currentSong;
-                this.audioDOM.src = this.currentSong.url;
-                //加载资源，iOS需要调用此方法
-                this.audioDOM.load();
-            }
-        }
-
+        song.playStatus = this.state.playStatus;
         return (
             <div className="player-container">
                 <div className="player" ref="player" style={{ display: this.props.showStatus === true ? "block" : "none" }}>
@@ -184,14 +283,14 @@ export default class Player extends React.Component {
                                 <div className="play-progress">
                                     <Progress
                                         progress={this.state.playProgress}
-                                    // onDrag={this.handleDrag}
-                                    // onDragEnd={this.handleDragEnd} 
+                                        onDrag={this.handleDrag}
+                                        onDragEnd={this.handleDragEnd}
                                     />
                                 </div>
                             </div>
                             <div className="play-wrapper">
                                 <div className="play-model-button" onClick={this.changePlayMode}>
-                                    <i className={"icon-" + this.playModes[this.state.currentPlayMode] + "-play"}></i>
+                                    <i className={"icon-" + this.playModes[this.state.currentPlayMode]}></i>
                                 </div>
                                 <div className="previous-button" onClick={this.previous}>
                                     <i className="icon-previous"></i>
