@@ -12,6 +12,7 @@ import "./Progress.styl";
  * 拖拽接受回调函数（onDragEnd）
  */
 import PropTypes from "prop-types";
+
 PropTypes.propTypes = {
     progress: PropTypes.number.isRequired,
     disableButton: PropTypes.bool,
@@ -27,8 +28,9 @@ export default class Progress extends React.Component {
     constructor(props) {
         super(props);
     }
-    componentDidUpdate(){
-        if(!this.progressBarWidth){
+    componentDidUpdate() {
+        //组件更新后重新获取进度条总宽度
+        if (!this.progressBarWidth) {
             this.progressBarWidth = ReactDOM.findDOMNode(this.refs.progressBar).offsetWidth;
         }
     }
@@ -70,6 +72,7 @@ export default class Progress extends React.Component {
                  */
                 let touch = e.touches[0];
                 let diffX = touch.clientX - downX;
+
                 let btnLeft = buttonLeft + diffX;
                 if (btnLeft > progressBarDOM.offsetWidth) {
                     btnLeft = progressBarDOM.offsetWidth;
@@ -96,12 +99,7 @@ export default class Progress extends React.Component {
         }
     }
 
-    componentDidUpdate() {
-        //组件更新后重新获取进度条总宽度
-        if (!this.progressBarWidth) {
-            this.progressBarWidth = ReactDOM.findDOMNode(this.refs.progressBar).offsetWidth;
-        }
-    }
+
     render() {
         // console.log(this.props);
         /**
@@ -110,21 +108,23 @@ export default class Progress extends React.Component {
          * disableButton为false渲染按钮元素
          */
         let { progress, disableButton } = this.props;
-        if (!process) process = 0;
+        if (!progress) progress = 0;
 
-
+        /**
+         * 设置按钮的Left值
+         */
         let progressButtonOffsetLeft = 0;
         if (this.progressBarWidth) {
-            progressButtonOffsetLeft = process * this.progressBarWidth;
+            progressButtonOffsetLeft = progress * this.progressBarWidth;
         }
         return (
             <div className="progress-bar" ref="progressBar">
                 <div className="progress-load"></div>
-                <div className="progress" ref="progress" style={{ width: "20%" }}></div>
+                <div className="progress" ref="progress" style={{width:`${progress * 100}%`}}></div>
+                {/* <div className="progress-button" ref="progressBtn" style={{left:progressButtonOffsetLeft}}></div> */}
                 {
                     disableButton === true ? "" :
-                        <div className="progress-button" ref="progressBtn" style={{ left: "70px" }}></div>
-
+                        <div className="progress-button" ref="progressBtn" style={{left:progressButtonOffsetLeft}}></div>
                 }
             </div>
         )

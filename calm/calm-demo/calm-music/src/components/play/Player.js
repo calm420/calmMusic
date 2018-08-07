@@ -2,7 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Song } from "@/model/song";
 import Progress from "./Progress";
-
+import MiniPlayer from "./MiniPlayer";
+import { CSSTransition } from "react-transition-group";
 import "./Player.styl";
 var calm;
 export default class Player extends React.Component {
@@ -14,7 +15,7 @@ export default class Player extends React.Component {
         this.currentIndex = 0;
         this.isFirstPlay = true;
         //播放模式： menu-列表 loop2-单曲 shuffle-随机
-        this.playModes = ["menu", "loop2", "shuffle"];
+        this.playModes = ["loop", "loop2", "shuffle"];
         this.state = {
             currentTime: 0,
             playProgress: 0,
@@ -32,6 +33,7 @@ export default class Player extends React.Component {
          */
         this.audioDOM.addEventListener("canplay", () => {
             this.audioDOM.play();
+            this.startImgRotate();
             this.setState({
                 playStatus: true
             })
@@ -52,29 +54,30 @@ export default class Player extends React.Component {
          *  播放完后的处理，给audio注册ended事件
          */
         this.audioDOM.addEventListener("ended", () => {
-            console.log("end")
             if (this.props.playSongs.length > 1) {
-                let currentIndex = this.currentIndex;
                 if (this.state.currentPlayMode === 0) {
-                    if (currentIndex = this.props.playSongs.length - 1) {
-                        currentIndex = 0
+                    if (this.currentIndex === this.props.playSongs.length - 1) {
+                        this.currentIndex = 0
                     } else {
-                        currentIndex += 1;
+                        this.currentIndex = this.currentIndex + 1;
+                        console.log(this.currentIndex)
                     }
                 } else if (this.state.currentPlayMode === 1) {
                     this.audioDOM.play();
                     return;
                 } else {
                     let index = parseInt(Math.random() * this.props.playSongs.length, 10);
-                    currentIndex = index;
+                    this.currentIndex = index;
                 }
-                this.props.changeCurrentSong(calm.props.playSongs[currentIndex]);
+                this.props.changeCurrentSong(this.props.playSongs[this.currentIndex]);
                 // this.props.changeCurrentIndex(currentIndex);
+                // this.audioDOM.load();
             } else {
                 if (this.state.currentPlayMode === 1) {
                     this.audioDOM.play();
                 } else {
                     this.audioDOM.pause();
+                    this.stopImgRotate();
                     this.setState({
                         playProgress: 0,
                         currentTime: 0,
@@ -116,22 +119,23 @@ export default class Player extends React.Component {
      * 播放与暂停
      */
     playOrPause = () => {
-        if (this.state.playStatus == false) {
-            if(this.first == undefined){
-                this.audioDOM.src = this.currentSong.url;
-                this.first = true;
-            }
+        if (this.state.playStatus === false) {
+            // if(this.first === undefined){
+            //     this.audioDOM.src = this.currentSong.url;
+            //     this.first = true;
+            // }
             this.audioDOM.play();
+            this.startImgRotate();
             this.setState({
                 playStatus: true
             })
         } else {
             this.audioDOM.pause();
+            this.stopImgRotate();
             this.setState({
                 playStatus: false
             })
         }
-        console.log(this.state.playStatus)
     }
 
 
@@ -140,24 +144,19 @@ export default class Player extends React.Component {
      */
     previous = () => {
         if (this.props.playSongs.length > 0 && this.props.playSongs.length !== 1) {
-            let currentIndex = calm.currentIndex;
-            console.log("1",currentIndex);
             if (this.state.currentPlayMode === 0) { //列表播放
-                if (currentIndex === 0) {
-                    console.log("===0",currentIndex)
-                    currentIndex = this.props.playSongs.length - 1;
-                    console.log("===0===",currentIndex)
+                if (this.currentIndex === 0) {
+                    this.currentIndex = this.props.playSongs.length - 1;
                 } else {
-                    currentIndex -= 1;
+                    this.currentIndex =this.currentIndex -  1;
                 }
             } else if (this.state.currentPlayMode === 1) {//单曲循环
-                currentIndex = this.currentIndex;
+                this.currentIndex = this.currentIndex;
             } else {//随机播放
                 let index = parseInt(Math.random() * this.props.playSongs.length, 10);
-                currentIndex = index;
+                this.currentIndex = index;
             }
-            console.log("2",currentIndex)
-            this.props.changeCurrentSong(this.props.playSongs[currentIndex]);
+            this.props.changeCurrentSong(this.props.playSongs[this.currentIndex]);
             // this.props.changeCurrentIndex(currentIndex);
         }
     }
@@ -166,25 +165,23 @@ export default class Player extends React.Component {
      * 下一首
      */
     next = () => {
-        // console.log("next")
-        // return
         if (this.props.playSongs.length > 0 && this.props.playSongs.length !== 1) {
-            let currentIndex = this.currentIndex;
             if (this.state.currentPlayMode === 0) {
-                if (currentIndex === this.props.playSongs.length - 1) {
-                    currentIndex = 0;
+                if (this.currentIndex === this.props.playSongs.length - 1) {
+                    this.currentIndex = 0;
                 } else {
-                    currentIndex += 1;
+                    this.currentIndex = this.currentIndex + 1;
                 }
             } else if (this.state.currentPlayMode === 1) {
-                currentIndex = this.currentIndex;
+                // this.currentIndex = this.currentIndex;
+                this.props.changeCurrentIndex(this.currentIndex);
+                this.currentIndex = this.props.currentIndex;
             } else {
                 let index = parseInt(Math.random() * this.props.playSongs.length, 10);
-                currentIndex = index;
+                this.currentIndex = index;
             }
 
-            this.props.changeCurrentSong(this.props.playSongs[currentIndex]);
-            console.log(currentIndex);
+            this.props.changeCurrentSong(this.props.playSongs[this.currentIndex]);
             /**
              * 调用父组件修改当前歌曲位置
              */
@@ -197,21 +194,28 @@ export default class Player extends React.Component {
      * 旋转图片
      */
     startImgRotate = () => {
-
+        if(this.singerImgDOM.className.indexOf("rotate") === -1){
+            this.singerImgDOM.classList.add("rotate");
+        }else {
+            this.singerImgDOM.style["webkitAnimationPlayState"] = "running";
+            this.singerImgDOM.style["animationPlayState"] = "running";
+        }
     }
 
     /**
      * 停止旋转图片
      */
     stopImgRotate = () => {
-
+        this.singerImgDOM.style["webkitAnimationPlayState"] = "paused";
+        this.singerImgDOM.style["animationPlayState"] = "paused"
     }
     /**
-     * 拖拽方法
+     * 开始拖拽方法
      */
     handleDrag = (progress) => {
         if (this.audioDOM.duration > 0) {
             this.audioDOM.pause();
+            this.stopImgRotate();
             this.setState({
                 playStatus: false
             })
@@ -224,15 +228,13 @@ export default class Player extends React.Component {
     handleDragEnd = () => {
         if (this.audioDOM.duration > 0) {
             let currentTime = this.audioDOM.duration * calm.dragProgress;
-
-            console.log("duration",this.audioDOM.duration)
-            console.log("calm.dragProgress",calm.dragProgress)
             this.setState({
                 playProgress: this.dragProgress,
                 currentTime: currentTime
             }, () => {
                 this.audioDOM.currentTime = currentTime;
                 this.audioDOM.play();
+                this.startImgRotate();
                 this.setState({
                     playStatus: true
                 })
@@ -242,10 +244,26 @@ export default class Player extends React.Component {
 
     }
 
+    /**
+     * 控制player和miniplauer的显示状态
+     */
+    hidePlayer = ()=>{
+        this.props.showMusicPlayer(false);
+    }
+
+    showPlayer = ()=>{
+        this.props.showMusicPlayer(true);
+    }
+
+
+    /**
+     * 显示播放列表
+     */
+    showPlayList = ()=>{
+        this.props.showList(true);
+    }
     render() {
         
-        // this.currentIndex = this.props.currentIndex;
-        // console.log(this.props.currentIndex)
         //从redux中获取当前播放歌曲
         if (this.props.currentSong && this.props.currentSong.url) {
             //当前歌曲发生变化
@@ -267,7 +285,27 @@ export default class Player extends React.Component {
         song.playStatus = this.state.playStatus;
         return (
             <div className="player-container">
-                <div className="player" ref="player" style={{ display: this.props.showStatus === true ? "block" : "none" }}>
+            <CSSTransition in={this.props.showStatus} timeout={300} classNames="player-rotate"
+                onEnter={
+                    ()=>{
+                        this.playerDOM.style.display = "block"
+                    }
+                }
+                onExited={
+                    ()=>{
+                        this.playerDOM.style.display = "none"
+                    }
+                }
+                >
+                <div className="player" ref="player">
+                    <div className="header">
+                        <span className="header-back" onClick={this.hidePlayer} >
+                            <i className="icon-circle-left"></i>
+                        </span>
+                        <div className="header-title">
+                            {song.name}
+                        </div>
+                    </div>
                     <div className="singer-middle">
                         <div className="singer-img" ref="singerImg">
                             <img src={playBg} alt={song.name} onLoad={
@@ -301,12 +339,24 @@ export default class Player extends React.Component {
                                 <div className="next-button" onClick={this.next}>
                                     <i className="icon-next"></i>
                                 </div>
+                                <div className="play-list-button" onClick={this.showPlayList}>
+                                    <i className="icon-menu"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div className="player-bg" ref="playerBg"></div>
                     <audio ref="audio"></audio>
                 </div>
+                </CSSTransition>
+                <MiniPlayer 
+                    song={song} 
+                    progress={this.state.playProgress}
+                    playOrPause={this.playOrPause}
+                    next={this.next}
+                    showStatus={this.props.showStatus}
+                    showMiniPlayer={this.showPlayer}
+                ></MiniPlayer>
             </div>
         )
 

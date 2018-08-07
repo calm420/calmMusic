@@ -26,8 +26,8 @@ import * as SongModel from "@/model/song";
 /**
  * 添加动画
  */
-import { CSSTransition } from "react-transition-group"
-
+import { CSSTransition } from "react-transition-group";
+import { getTransitionEndName } from "@/util/event";
 export default class Album extends React.Component {
     constructor(props) {
         super(props);
@@ -54,14 +54,12 @@ export default class Album extends React.Component {
          * 获取专辑信息的方法
          */
         getAlbumInfo(this.props.match.params.id).then((res) => {
-            // console.log(res);
             if (res) {
                 if (res.code === CODE_SUCCESS) {
                     let album = AlbumModel.createAlbumByDetail(res.data);
                     album.desc = res.data.desc;
 
                     let songList = res.data.list;
-                    // console.log("songList", songList);
                     let songs = [];
                     songList.forEach(item => {
 
@@ -70,7 +68,6 @@ export default class Album extends React.Component {
                         this.getSongUrl(song, item.songmid);
                         songs.push(song);
                     });
-                    // console.log("songs", songs);
 
                     this.setState({
                         loading: false,
@@ -82,6 +79,8 @@ export default class Album extends React.Component {
                 }
             }
         })
+
+        this.initMusicIco();
     }
     componentWillMount() {
         window.removeEventListener("resize", this.getMContainerHeight)
@@ -135,10 +134,11 @@ export default class Album extends React.Component {
     }
     selectSong(song) {
         return (e) => {
-            // console.log(this.props.setSongs([song]))
             this.props.setSongs([song]);
             this.props.changeCurrentSong(song);
-            // console.log( this.props.changeCurrentSong(song))
+            //e.nativeEvent获取的是原生的事件对象，这里是由Scroll组件中的better-scroll派发的
+            console.log("e,",e.nativeEvent)
+            this.startMusicIcoAnimation(e);
         }
     }
     /**
@@ -152,7 +152,64 @@ export default class Album extends React.Component {
             this.props.showMusicPlayer(true);
         }
     }
-   
+    /** 
+     * 初始化音符图标
+    */
+    initMusicIco(){
+        this.muisicIcos = [];
+        this.muisicIcos.push(ReactDOM.findDOMNode(this.refs.musicIco1));
+        this.muisicIcos.push(ReactDOM.findDOMNode(this.refs.musicIco2));
+        this.muisicIcos.push(ReactDOM.findDOMNode(this.refs.musicIco3));
+
+        this.muisicIcos.forEach((item)=>{
+            //初始化状态
+            item.run = false;
+            let transitionEndName = getTransitionEndName(item);
+            item.addEventListener(transitionEndName,function(){
+                this.style.display = "none";
+                this.style["webkitTransform"] = "translate3d(0, 0, 0)";
+                this.style["transform"] = "translate3d(0, 0, 0)";
+                this.run = false;
+
+                let icon = this.querySelector("div");
+                icon.style["webkitTransform"] = "translate3d(0, 0, 0)";
+                icon.style["transform"] = "translate3d(0, 0, 0)";
+            },false)
+        })
+
+    }
+
+    /**
+     * 音符开始下落
+     */
+    startMusicIcoAnimation({clientX,clientY}){
+        console.log("此方法被执行了")
+        if(this.muisicIcos.length > 0){
+            console.log(this.muisicIcos.length )
+            for(let i = 0;i < this.muisicIcos.length;i++){
+                let item = this.muisicIcos[i];
+                console.log("x",clientX);
+                console.log("y",clientY);
+                //选择一个未在动画中的元素开始动画
+                if(item.run === false){
+                    item.style.top = clientY + "px";
+                    item.style.left = clientX + "px";
+                    item.style.display = "inline-block";
+                    console.log(item.style.display)
+                    setTimeout(()=>{
+                        item.run = true;
+                        item.style["webkitTransform"] = "translate3d(0, 1000px, 0)";
+                        item.style["transform"] = "translate3d(0, 1000px, 0)";
+
+                        let icon = item.querySelector("div");
+						icon.style["webkitTransform"] = "translate3d(-30px, 0, 0)";
+						icon.style["transform"] = "translate3d(-30px, 0, 0)";
+                    },10);
+                    break;
+                }
+            }
+        }
+    }
     render() {
         let album = this.state.album;
         let songs = this.state.songs.map((song) => {
@@ -201,6 +258,15 @@ export default class Album extends React.Component {
                             </Scroll>
                         </div>
                         <Loading title="正在加载..." show={this.state.loading}></Loading>
+                    </div>
+                    <div className="music-ico" ref="musicIco1">
+                        <div className="icon-music"></div>
+                    </div>
+                    <div className="music-ico" ref="musicIco2">
+                        <div className="icon-music"></div>
+                    </div>
+                    <div className="music-ico" ref="musicIco3">
+                        <div className="icon-music"></div>
                     </div>
                 </div>
             </CSSTransition>

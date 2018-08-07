@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import logo from "../assets/imgs/logo.png";
-import Player from "../containers/Player"
+// import Player from "../containers/Player"
+import MusicPlayer from "./play/MusicPlayer";
 // 导入样式
 import "../assets/stylus/reset.styl";
 import './App.styl';
@@ -51,7 +52,8 @@ class App extends Component {
                             <Route component={Recommend} />
                         </Switch>
                     </div>
-                    <Player/>
+                    {/* <Player/> */}
+                    <MusicPlayer/>
                 </div>
             </Router>
 

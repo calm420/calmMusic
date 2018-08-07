@@ -7,7 +7,7 @@ import * as AlbumModel from "@/model/album";
 import Loading from "@/common/loading/Loading"
 import Scroll from "@/common/scroll/Scroll";
 
-import {Route} from "react-router-dom";
+import { Route } from "react-router-dom";
 // import Album from "../album/Album";
 import Album from "@/containers/Album";
 
@@ -20,16 +20,16 @@ export default class Recommend extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            loading:true,
+            loading: true,
             sliderList: [],
             newAlbums: [],
             refreshScroll: false,
-            screenHeight:document.body.clientHeight - 90
+            screenHeight: document.body.clientHeight - 90
         }
     }
 
     componentDidMount() {
-        window.addEventListener("resize",this.getScreenHeight);
+        window.addEventListener("resize", this.getScreenHeight);
         //  请求轮播图数据
         getCarousel().then((res) => {
             // console.log(res);
@@ -65,26 +65,26 @@ export default class Recommend extends React.Component {
                     });
                     this.setState({
                         // 当专辑列表加载完后隐藏loading组件，
-                        loading:false,
+                        loading: false,
                         newAlbums: albumList
-                    },() => {
+                    }, () => {
                         //刷新scroll
-                        this.setState({refreshScroll:true});
+                        this.setState({ refreshScroll: true });
                     })
                 }
             }
         });
-        
+
     }
 
-    componentWillMount(){
-        window.removeEventListener("resize",this.getScreenHeight);
+    componentWillMount() {
+        window.removeEventListener("resize", this.getScreenHeight);
     }
     // 获取屏幕高度
-    getScreenHeight=()=>{
+    getScreenHeight = () => {
         var height = document.body.clientHeight - 90;
         this.setState({
-            screenHeight:height
+            screenHeight: height
         })
         // this.state.screenHeight = height;
     }
@@ -94,24 +94,24 @@ export default class Recommend extends React.Component {
         }
     }
     // 专辑详情页面
-    toAlbumDetail(url){
+    toAlbumDetail(url) {
         return () => {
             this.props.history.push({
-                pathname:url
+                pathname: url
             })
         }
     }
     render() {
-            /**
-             * 这里的this.props？？？？
-             * match是路由通过props传递给组件的包含了url、参数等相关信息。然后在根元素下面添加子路由
-             */
-            let {match} = this.props;
-            // console.log("match",this.props);
-            let albums = this.state.newAlbums.map(item => {
+        /**
+         * 这里的this.props？？？？
+         * match是路由通过props传递给组件的包含了url、参数等相关信息。然后在根元素下面添加子路由
+         */
+        let { match } = this.props;
+        // console.log("match",this.props);
+        let albums = this.state.newAlbums.map(item => {
             let album = AlbumModel.createAlbumByList(item);
             return (
-                <div className="album-wrapper" key={album.id} onClick={this.toAlbumDetail(`${match.url+'/'+album.mId}`)}>
+                <div className="album-wrapper" key={album.id} onClick={this.toAlbumDetail(`${match.url + '/' + album.mId}`)}>
                     <div className="left">
                         <LazyLoad height="100%">
                             <img src={album.img} width="100%" height="100%" alt={album.name} />
@@ -132,8 +132,8 @@ export default class Recommend extends React.Component {
             )
         })
         return (
-            <div className="music-recommend" style={{height:this.state.screenHeight}}>
-                <Scroll refresh={this.state.refreshScroll} onScroll={(e)=> {forceCheck();}}>
+            <div className="music-recommend" style={{ height: this.state.screenHeight }}>
+                <Scroll refresh={this.state.refreshScroll} onScroll={(e) => { forceCheck(); }}>
                     <div>
                         <div className="slider-container">
                             <div className="swiper-wrapper">
@@ -160,7 +160,7 @@ export default class Recommend extends React.Component {
                     </div>
                 </Scroll>
                 <Loading title="正在加载..." show={this.state.loading} ></Loading>
-                <Route path={`${match.url+'/:id'}`} component={Album}></Route>
+                <Route path={`${match.url + '/:id'}`} component={Album}></Route>
             </div>
         )
     }

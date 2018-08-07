@@ -12,6 +12,8 @@ const mapDispatchToProps = (dispatch) => ({
         dispatch(showPlayer(status));
     },
     changeCurrentSong:(song) => {
+        console.log("此方法被执行了")
+        console.log(song)
         dispatch(changeSong(song))
     },
     setSongs:(songs) => {
